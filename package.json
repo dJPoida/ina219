@@ -1,0 +1,27 @@
+{
+  "name": "ina219",
+  "version": "0.0.1",
+  "description": "NodeJS port of the DFRobot INA219 (SEN0291) IIC Digital Wattmeter",
+  "main": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dJPoida/ina219.git"
+  },
+  "author": "dJPoida <djpoida@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "homepage": "https://github.com/dJPoida/ina219#readme",
+  "keywords": [
+    "ina219",
+    "wattmeter",
+    "dfrobot",
+    "sensor",
+    "sen0291",
+    "node",
+    "nodejs",
+    "typescript"
+  ],
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
+}
