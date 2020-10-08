@@ -1,1 +1,1 @@
-{"version":3,"file":"ina219-i2c-address.const.js","sourceRoot":"","sources":["../../src/const/ina219-i2c-address.const.ts"],"names":[],"mappings":";;;AAAa,QAAA,kBAAkB,GAAG;IAChC,CAAC,EAAE,IAAI;IACP,CAAC,EAAE,IAAI;IACP,CAAC,EAAE,IAAI;IACP,CAAC,EAAE,IAAI;CACC,CAAC"}
+{"version":3,"file":"ina219-i2c-address.const.js","sourceRoot":"","sources":["../../src/const/ina219-i2c-address.const.ts"],"names":[],"mappings":";;;AAAa,QAAA,kBAAkB,GAAG;IAChC,SAAS,EAAE,IAAI;IACf,SAAS,EAAE,IAAI;IACf,SAAS,EAAE,IAAI;IACf,SAAS,EAAE,IAAI;CACP,CAAC"}

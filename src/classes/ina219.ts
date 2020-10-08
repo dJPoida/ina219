@@ -27,7 +27,7 @@ export class Ina219 {
 
   private i2cBus: PromisifiedBus;
 
-  private _address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS[4];
+  private _address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS.ADDRESS_4;
 
   private calValue = 4096;
 
@@ -35,11 +35,11 @@ export class Ina219 {
   /**
    * Initialise the connection to the ina219 over i2c
    * @param busNumber (default = 1) the i2c bus number to use
-   * @param address (default = INA219_I2C_ADDRESS.4 (0x45)) the i2c address of the INA219
+   * @param address (default = INA219_I2C_ADDRESS.ADDRESS_4 (0x45)) the i2c address of the INA219
    * 
-   * @returns true | Error true if initialisation was successful, string .
+   * @returns true | Error true if initialisation was successful, an Error object if not.
    */
-  public init = async (busNumber = 1, address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS[4]): Promise<true | Error> => {
+  public init = async (busNumber = 1, address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS.ADDRESS_4): Promise<true | Error> => {
     try {
       // Attempt to open the I2C Bus. This will return false if the hardware is not available.
       const newI2cBus = await openPromisified(busNumber);
@@ -65,7 +65,7 @@ export class Ina219 {
 
       // Set the default config
       this.calValue = 4096;
-      await this.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
+      await this.setBusRange(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
       await this.setPGA(INA219_PGA_BITS.PGA_BITS_8);
       await this.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
       await this.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
@@ -102,9 +102,9 @@ export class Ina219 {
 
 
   /**
-   * Get the Bus voltage
+   * Get the Bus Voltage (V)
    */
-  public getBusVoltage = async (): Promise<number> => {
+  public getBusVoltage_V = async (): Promise<number> => {
     return (await this.readInaRegister(INA219_REGISTER.BUSVOLTAGE) >> 1) * 0.001;
   }
 
@@ -137,7 +137,7 @@ export class Ina219 {
    * Set the Bus Voltage Range (16v or 32v)
    * @param value
    */
-  public setBusRNG = async (value: AN_INA219_BUS_VOLTAGE_RANGE): Promise<void> => {
+  public setBusRange = async (value: AN_INA219_BUS_VOLTAGE_RANGE): Promise<void> => {
     if (!this.initialised) throw new Error('Cannot call `setBusRNG` prior to initialisation.');
 
     let conf = 0;
