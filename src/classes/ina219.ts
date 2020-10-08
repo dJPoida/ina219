@@ -183,24 +183,33 @@ export class Ina219 {
       }
 
       this.i2cBus = newI2cBus;
+
+      // Attempt to locate the device
+      const scanResult = await this.i2cBus.scan(address);
+      if (!scanResult.includes(address)) {
+        throw new Error(`I2C was unable to reach the INA219 device at address '0x${address.toString(16)}'.`);
+      }
+
+      // Record the config
       this._address = address;
       this._i2cHardwareState = I2C_HARDWARE_STATE.AVAILABLE;
       this._initialised = true;
       
-      try {
-        const scanResult = this.i2cBus.scan(address);
-        console.log('scanResult', scanResult);
-      } catch (err) {
-        throw new Error(`I2C was unable to reach the INA219 device at address '${address}'.`);
-      }
-
-      //   self.i2c_addr = addr
-      console.log(address);
-
+      // Bind listeners for future event handling
       this.bindEvents();
     } catch (err) {
+      // If the I2C Bus was connected but the address couldn't be reached, shut it down again
+      if (this.i2cBus) {
+        try {
+          await this.i2cBus.close();
+        } catch {
+          // sink. Don't care
+        }
+      }
+
       this._i2cHardwareState = I2C_HARDWARE_STATE.UNAVAILABLE;
       this._initialised = false;
+
       return err;
     }
 
