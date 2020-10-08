@@ -2,17 +2,11 @@ import { PromisifiedBus } from 'i2c-bus';
 import { openPromisified } from './i2c.mock';
 import { AN_INA219_I2C_ADDRESS, INA219_I2C_ADDRESS } from '../const/ina219-i2c-address.const';
 import { AN_I2C_HARDWARE_STATE, I2C_HARDWARE_STATE } from '../const/i2c-hardware-state.const';
+import { AN_INA219_REGISTER, INA219_REGISTER } from '../const/ina219-register.const';
+import { INA219_CONFIG_RESET } from '../const/ina219-config.const';
 
 /*
 const _INA219_READ = 0x01;
-
-const INA219_I2C_ADDRESS1 = 0x40;
-const INA219_I2C_ADDRESS2 = 0x41;
-const INA219_I2C_ADDRESS3 = 0x44;
-const INA219_I2C_ADDRESS4 = 0x45;
-
-const INA219_CONFIG_RESET = 0x8000;
-const _INA219_REG_CONFIG = 0x00;
 
 const bus_vol_range_16V = 0;
 const bus_vol_range_32V = 1;
@@ -45,19 +39,9 @@ const shunt_vol_con = 5;
 const bus_vol_con = 6;
 const shunt_and_bus_vol_con = 7;
 
-const _INA219_REG_SHUNTVOLTAGE = 0x01;
-
-const _INA219_REG_BUSVOLTAGE = 0x02;
-
-const _INA219_REG_POWER = 0x03;
-
-const _INA219_REG_CURRENT = 0x04;
-
-const _INA219_REG_CALIBRATION = 0x05;
 */
 
 // const begin = (self) => {
-//   if (!self.scan()) return false;
         
 //   self.cal_value = 4096;
 //   self.set_bus_RNG(self.bus_vol_range_32V);
@@ -75,26 +59,7 @@ const _INA219_REG_CALIBRATION = 0x05;
 //   self._write_register(self._INA219_REG_CALIBRATION, self.cal_value);
 // }
 
-//   def reset(self):
-//         self._write_register(self._INA219_REG_CONFIG, self._INA219_CONFIG_RESET)
 
-//     def _write_register(self, register, value):
-//         self.i2cbus.write_i2c_block_data(self.i2c_addr, register, [value >> 8, value & 0xff])
-
-//     def _read_register(self, register):
-//         return self.i2cbus.read_i2c_block_data(self.i2c_addr, register) 
-
-//     def get_bus_voltage_V(self):
-//         return float(self.read_ina_reg(self._INA219_REG_BUSVOLTAGE) >> 1) * 0.001
-
-//     def get_shunt_voltage_mV(self):
-//         return float(self.read_ina_reg(self._INA219_REG_SHUNTVOLTAGE))
-
-//     def get_current_mA(self):
-//         return float(self.read_ina_reg(self._INA219_REG_CURRENT))
-
-//     def get_power_mW(self):
-//         return float(self.read_ina_reg(self._INA219_REG_POWER)) * 20
 
 //     def set_bus_RNG(self, value):
 //         conf = 0
@@ -145,13 +110,7 @@ const _INA219_REG_CALIBRATION = 0x05;
 //         conf |= mode
 //         self._write_register(self._INA219_REG_CONFIG, conf)
 
-//     def read_ina_reg(self, reg):
-//         buf = []
-//         buf = self._read_register(reg)
-//         if (buf[0] & 0x80):
-//             return - 0x10000 + ((buf[0] << 8) | (buf[1]))
-//         else:
-//             return (buf[0] << 8) | (buf[1])
+
 
 
 export class Ina219 {
@@ -216,6 +175,91 @@ export class Ina219 {
     return true;
   }
 
+
+  /**
+   * Reset the config on the ina219 to the default firmware values
+   */
+  public reset = async ():Promise<void> => {
+    await this.writeRegister(INA219_REGISTER.CONFIG, INA219_CONFIG_RESET);
+  }
+
+
+  /**
+   * Get the Bus voltage
+   */
+  public getBusVoltage = async(): Promise<number> => {
+    return (await this.readInaRegister(INA219_REGISTER.BUSVOLTAGE) >> 1) * 0.001;
+  }
+
+
+  /**
+   * Get the Shunt Voltage in millivolts (mV)
+   */
+  public getShuntVoltage_mV = async(): Promise<number> => {
+    return await this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE);
+  }
+
+
+  /**
+   * Get the Current in milliamps (mA)
+   */
+  public getCurrent_mA = async(): Promise<number> => {
+    return await this.readInaRegister(INA219_REGISTER.CURRENT);
+  }
+
+
+  /**
+   * Get the Power in milliwatts (mW)
+   */
+  public getPower_mW = async(): Promise<number> => {
+    return (await this.readInaRegister(INA219_REGISTER.POWER) * 20);
+  }
+
+
+  /**
+   * Write a register value to the INA219
+   * @param register 
+   * @param value 
+   */
+  private writeRegister = async (register: AN_INA219_REGISTER, value: number) => {
+    if (!this.initialised) throw new Error('Cannot call `writeRegister` prior to initialisation.');
+
+    const bytes = Buffer.alloc(2);
+  	bytes[0] = (value >> 8) & 0xFF;
+  	bytes[1] = value & 0xFF;
+
+  	await this.i2cBus.writeI2cBlock(this.address, register, 2, bytes);
+  };
+
+
+  /**
+   * Read a register from the I2C device
+   * @param register 
+   */
+  private readRegister = async (register: AN_INA219_REGISTER) => {
+    if (!this.initialised) throw new Error('Cannot call `readRegister` prior to initialisation.');
+
+    const result = Buffer.alloc(2);
+  	await this.i2cBus.readI2cBlock(this.address, register, 2, result);
+  	return result.readInt16BE();
+  };
+
+
+  /**
+   * Read and handle a register value from the INA219
+   * @param register 
+   */
+  private readInaRegister = async (register: AN_INA219_REGISTER) => {
+    const result = await this.readRegister(register);
+
+    if (result[0] & 0x80) {
+      return - 0x10000 + ((result[0] << 8) | (result[1]));
+    } else {
+      return (result[0] << 8) | (result[1])();
+    }
+  }
+
+
   /**
    * Bind internal event listeners after initialisation
    */
@@ -229,6 +273,7 @@ export class Ina219 {
       }
     });
   }
+
 
   /**
    * The address used to communicate with the INA219

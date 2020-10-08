@@ -1,0 +1,1 @@
+{"version":3,"file":"ina219-register.const.js","sourceRoot":"","sources":["../../src/const/ina219-register.const.ts"],"names":[],"mappings":";;;AAAa,QAAA,eAAe,GAAG;IAC7B,MAAM,EAAE,IAAI;IACZ,YAAY,EAAE,IAAI;IAClB,UAAU,EAAE,IAAI;IAChB,KAAK,EAAE,IAAI;IACX,OAAO,EAAE,IAAI;IACb,WAAW,EAAE,IAAI;CACT,CAAC"}

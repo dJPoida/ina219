@@ -14,6 +14,42 @@ export declare class Ina219 {
      */
     init: (busNumber?: number, address?: AN_INA219_I2C_ADDRESS) => Promise<true | Error>;
     /**
+     * Reset the config on the ina219 to the default firmware values
+     */
+    reset: () => Promise<void>;
+    /**
+     * Get the Bus voltage
+     */
+    getBusVoltage: () => Promise<number>;
+    /**
+     * Get the Shunt Voltage in millivolts (mV)
+     */
+    getShuntVoltage_mV: () => Promise<number>;
+    /**
+     * Get the Current in milliamps (mA)
+     */
+    getCurrent_mA: () => Promise<number>;
+    /**
+     * Get the Power in milliwatts (mW)
+     */
+    getPower_mW: () => Promise<number>;
+    /**
+     * Write a register value to the INA219
+     * @param register
+     * @param value
+     */
+    private writeRegister;
+    /**
+     * Read a register from the I2C device
+     * @param register
+     */
+    private readRegister;
+    /**
+     * Read and handle a register value from the INA219
+     * @param register
+     */
+    private readInaRegister;
+    /**
      * Bind internal event listeners after initialisation
      */
     private bindEvents;
