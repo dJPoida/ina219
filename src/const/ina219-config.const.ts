@@ -1,1 +1,0 @@
-export const INA219_CONFIG_RESET = 0x8000;

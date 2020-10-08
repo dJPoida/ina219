@@ -1,127 +1,35 @@
 import { PromisifiedBus } from 'i2c-bus';
 import { openPromisified } from './i2c.mock';
 import { AN_INA219_I2C_ADDRESS, INA219_I2C_ADDRESS } from '../const/ina219-i2c-address.const';
-import { AN_I2C_HARDWARE_STATE, I2C_HARDWARE_STATE } from '../const/i2c-hardware-state.const';
+import { A_HARDWARE_AVAILABILITY_STATE, HARDWARE_AVAILABILITY_STATE } from '../const/hardware-availability-state.const';
 import { AN_INA219_REGISTER, INA219_REGISTER } from '../const/ina219-register.const';
-import { INA219_CONFIG_RESET } from '../const/ina219-config.const';
+import { AN_INA219_BUS_VOLTAGE_RANGE, INA219_BUS_VOLTAGE_RANGE } from '../const/ina219-bus-voltage-range.const';
+import { AN_INA219_MODE, INA219_MODE } from '../const/ina219-mode.const';
+import { AN_INA219_PGA_BITS, INA219_PGA_BITS } from '../const/ina219-pga-bits.const';
+import { AN_INA219_ADC_BITS, INA219_ADC_BITS } from '../const/ina219-adc-bits.const';
+import { AN_INA219_ADC_SAMPLE, INA219_ADC_SAMPLE } from '../const/ina219-adc-sample.const';
 
-/*
-const _INA219_READ = 0x01;
+const INA219_CONFIG_RESET = 0x8000;
 
-const bus_vol_range_16V = 0;
-const bus_vol_range_32V = 1;
-
-const PGA_bits_1 = 0;
-const PGA_bits_2 = 1;
-const PGA_bits_4 = 2;
-const PGA_bits_8 = 3;
-    
-const adc_bits_9 = 0;
-const adc_bits_10 = 1;
-const adc_bits_11 = 2;
-const adc_bits_12 = 3;
-    
-const adc_sample_1 = 0;
-const adc_sample_2 = 1;
-const adc_sample_4 = 2;
-const adc_sample_8 = 3;
-const adc_sample_16 = 4;
-const adc_sample_32 = 5;
-const adc_sample_64 = 6;
-const adc_sample_128 = 7;
-    
-const power_down = 0;
-const shunt_vol_trig = 1;
-const bus_vol_trig = 2;
-const shunt_and_bus_vol_trig = 3;
-const adc_off = 4;
-const shunt_vol_con = 5;
-const bus_vol_con = 6;
-const shunt_and_bus_vol_con = 7;
-
-*/
-
-// const begin = (self) => {
-        
-//   self.cal_value = 4096;
-//   self.set_bus_RNG(self.bus_vol_range_32V);
-//   self.set_PGA(self.PGA_bits_8);
-//   self.set_bus_ADC(self.adc_bits_12, self.adc_sample_8);
-//   self.set_shunt_ADC(self.adc_bits_12, self.adc_sample_8);
-//   self.set_mode(self.shunt_and_bus_vol_con);
-//   return true;
-// }
-
-// const linear_cal = (self, ina219_reading_mA, ext_meter_reading_mA) => {
-//   ina219_reading_mA = float(ina219_reading_mA);
-//   ext_meter_reading_mA = float(ext_meter_reading_mA);
-//   self.cal_value = int((ext_meter_reading_mA / ina219_reading_mA) * self.cal_value) & 0xFFFE;
-//   self._write_register(self._INA219_REG_CALIBRATION, self.cal_value);
-// }
-
-
-
-//     def set_bus_RNG(self, value):
-//         conf = 0
-//         conf = self.read_ina_reg(self._INA219_REG_CONFIG)
-//         conf &= ~(0x01 << 13)
-//         conf |= value << 13
-//         self._write_register(self._INA219_REG_CONFIG, conf)
-
-//     def set_PGA(self, bits):
-//         conf = 0
-//         conf = self.read_ina_reg(self._INA219_REG_CONFIG)
-//         conf &= ~(0x03 << 11)
-//         conf |= bits << 11
-//         self._write_register(self._INA219_REG_CONFIG, conf)
-    
-//     def set_bus_ADC(self, bits, sample):
-//         conf = 0
-//         value = 0
-//         if(bits < adc_bits_12 and sample > adc_sample_1):
-//             return
-//         if(bits < adc_bits_12):
-//             value = bits
-//         else:
-//             value = 0x80 | sample
-//         conf = self.read_ina_reg(self._INA219_REG_CONFIG)
-//         conf &= ~(0x0f << 7)
-//         conf |= value << 7
-//         self._write_register(self._INA219_REG_CONFIG, conf)
-    
-//     def set_shunt_ADC(self, bits, sample):
-//         conf = 0
-//         value = 0
-//         if(bits < adc_bits_12 and sample > adc_sample_1):
-//             return
-//         if(bits < adc_bits_12):
-//             value = bits
-//         else:
-//             value = 0x80 | sample
-//         conf = self.read_ina_reg(self._INA219_REG_CONFIG)
-//         conf &= ~(0x0f << 3)
-//         conf |= value << 3
-//         self._write_register(self._INA219_REG_CONFIG, conf)
-    
-//     def set_mode(self, mode):
-//         conf = 0
-//         conf = self.read_ina_reg(self._INA219_REG_CONFIG)
-//         conf &= ~0x07
-//         conf |= mode
-//         self._write_register(self._INA219_REG_CONFIG, conf)
-
-
-
-
+/**
+ * @class Ina219
+ * This class is ported from DFRobot's own Python / Raspberry pi library ans *SHOULD* behave identically
+ *
+ * @see https://github.com/DFRobot/DFRobot_INA219/blob/master/Python/RespberryPi/DFRobot_INA219.py
+ */
 export class Ina219 {
 
   private _initialised = false;
 
-  private _i2cHardwareState: AN_I2C_HARDWARE_STATE = I2C_HARDWARE_STATE.UNKNOWN;
+  private _i2cHardwareState: A_HARDWARE_AVAILABILITY_STATE = HARDWARE_AVAILABILITY_STATE.UNKNOWN;
+  
+  private _ina219HardwareState: A_HARDWARE_AVAILABILITY_STATE = HARDWARE_AVAILABILITY_STATE.UNKNOWN;
 
   private i2cBus: PromisifiedBus;
 
   private _address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS[4];
+
+  private calValue = 4096;
 
 
   /**
@@ -142,6 +50,7 @@ export class Ina219 {
       }
 
       this.i2cBus = newI2cBus;
+      this._i2cHardwareState = HARDWARE_AVAILABILITY_STATE.AVAILABLE;
 
       // Attempt to locate the device
       const scanResult = await this.i2cBus.scan(address);
@@ -151,13 +60,22 @@ export class Ina219 {
 
       // Record the config
       this._address = address;
-      this._i2cHardwareState = I2C_HARDWARE_STATE.AVAILABLE;
+      this._ina219HardwareState = HARDWARE_AVAILABILITY_STATE.AVAILABLE;
       this._initialised = true;
-      
+
+      // Set the default config
+      this.calValue = 4096;
+      await this.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
+      await this.setPGA(INA219_PGA_BITS.PGA_BITS_8);
+      await this.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
+      await this.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
+      await this.setMode(INA219_MODE.SHUNT_AND_BUS_VOL_CON);
+
       // Bind listeners for future event handling
       this.bindEvents();
+      
     } catch (err) {
-      // If the I2C Bus was connected but the address couldn't be reached, shut it down again
+      // If the I2C Bus was connected but the ina219's address couldn't be reached, shut the i2c bus down again
       if (this.i2cBus) {
         try {
           await this.i2cBus.close();
@@ -166,7 +84,6 @@ export class Ina219 {
         }
       }
 
-      this._i2cHardwareState = I2C_HARDWARE_STATE.UNAVAILABLE;
       this._initialised = false;
 
       return err;
@@ -180,14 +97,14 @@ export class Ina219 {
    * Reset the config on the ina219 to the default firmware values
    */
   public reset = async ():Promise<void> => {
-    await this.writeRegister(INA219_REGISTER.CONFIG, INA219_CONFIG_RESET);
+    return this.writeRegister(INA219_REGISTER.CONFIG, INA219_CONFIG_RESET);
   }
 
 
   /**
    * Get the Bus voltage
    */
-  public getBusVoltage = async(): Promise<number> => {
+  public getBusVoltage = async (): Promise<number> => {
     return (await this.readInaRegister(INA219_REGISTER.BUSVOLTAGE) >> 1) * 0.001;
   }
 
@@ -195,24 +112,133 @@ export class Ina219 {
   /**
    * Get the Shunt Voltage in millivolts (mV)
    */
-  public getShuntVoltage_mV = async(): Promise<number> => {
-    return await this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE);
+  public getShuntVoltage_mV = async (): Promise<number> => {
+    return this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE);
   }
 
 
   /**
    * Get the Current in milliamps (mA)
    */
-  public getCurrent_mA = async(): Promise<number> => {
-    return await this.readInaRegister(INA219_REGISTER.CURRENT);
+  public getCurrent_mA = async (): Promise<number> => {
+    return this.readInaRegister(INA219_REGISTER.CURRENT);
   }
 
 
   /**
    * Get the Power in milliwatts (mW)
    */
-  public getPower_mW = async(): Promise<number> => {
+  public getPower_mW = async (): Promise<number> => {
     return (await this.readInaRegister(INA219_REGISTER.POWER) * 20);
+  }
+
+
+  /**
+   * Set the Bus Voltage Range (16v or 32v)
+   * @param value
+   */
+  public setBusRNG = async (value: AN_INA219_BUS_VOLTAGE_RANGE): Promise<void> => {
+    if (!this.initialised) throw new Error('Cannot call `setBusRNG` prior to initialisation.');
+
+    let conf = 0;
+    conf = await this.readInaRegister(INA219_REGISTER.CONFIG);
+    conf &= ~(0x01 << 13);
+    conf |= value << 13;
+    return this.writeRegister(INA219_REGISTER.CONFIG, conf);
+  }
+
+
+  /**
+   * Set the Programmable Gain Amplifier
+   * @param bits
+   */
+  public setPGA = async (bits: AN_INA219_PGA_BITS): Promise<void> => {
+    if (!this.initialised) throw new Error('Cannot call `setPGA` prior to initialisation.');
+
+    let conf = 0;
+    conf = await this.readInaRegister(INA219_REGISTER.CONFIG);
+    conf &= ~(0x03 << 11);
+    conf |= bits << 11;
+    return this.writeRegister(INA219_REGISTER.CONFIG, conf);
+  }
+
+
+  /**
+   * Set the Bus ADC
+   * @param bits 
+   * @param sample 
+   */
+  public setBusADC = async (bits: AN_INA219_ADC_BITS, sample: AN_INA219_ADC_SAMPLE): Promise<void> => {
+    if (!this.initialised) throw new Error('Cannot call `setBusADC` prior to initialisation.');
+
+    let conf = 0;
+    let value = 0;
+
+    if((bits < INA219_ADC_BITS.ADC_BITS_12) && (sample > INA219_ADC_SAMPLE.ADC_SAMPLE_1)) return;
+      
+    if(bits < INA219_ADC_BITS.ADC_BITS_12) {
+        value = bits;
+    } else {
+        value = 0x80 | sample;
+    }
+
+    conf = await this.readInaRegister(INA219_REGISTER.CONFIG);
+    conf &= ~(0x0f << 7);
+    conf |= value << 7;
+    return this.writeRegister(INA219_REGISTER.CONFIG, conf);
+  }
+
+
+  /**
+   * Set the Shunt ADC
+   * @param bits 
+   * @param sample 
+   */
+  public setShuntADC = async (bits: AN_INA219_ADC_BITS, sample: AN_INA219_ADC_SAMPLE): Promise<void> => {
+    if (!this.initialised) throw new Error('Cannot call `setShuntADC` prior to initialisation.');
+
+    let conf = 0;
+    let value = 0;
+
+
+    if((bits < INA219_ADC_BITS.ADC_BITS_12) && (sample > INA219_ADC_SAMPLE.ADC_SAMPLE_1)) return;
+      
+    if(bits < INA219_ADC_BITS.ADC_BITS_12) {
+        value = bits;
+    } else {
+        value = 0x80 | sample;
+    }
+
+    conf = await this.readInaRegister(INA219_REGISTER.CONFIG);
+    conf &= ~(0x0f << 3);
+    conf |= value << 3;
+    return this.writeRegister(INA219_REGISTER.CONFIG, conf);
+  }
+
+
+  /**
+   * Set the Mode
+   * @param value 
+   */
+  public setMode = async (mode: AN_INA219_MODE): Promise<void> => {
+    if (!this.initialised) throw new Error('Cannot call `setMode` prior to initialisation.');
+
+    let conf = 0;
+    conf = await this.readInaRegister(INA219_REGISTER.CONFIG);
+    conf &= ~0x07;
+    conf |= mode;
+    return this.writeRegister(INA219_REGISTER.CONFIG, conf);
+  }
+
+
+  /**
+   * Calibrate the readings
+   * @param ina219Reading_mA the milliamp value reported by the ina219
+   * @param extMeterReading_mA the milliamp value recorded by an external multimeter
+   */
+  public linearCal = async (ina219Reading_mA: number, extMeterReading_mA: number): Promise<void> => {
+    this.calValue = Math.floor((extMeterReading_mA / ina219Reading_mA) * this.calValue) & 0xFFFE;
+    return this.writeRegister(INA219_REGISTER.CALIBRATION, this.calValue);
   }
 
 
@@ -232,18 +258,17 @@ export class Ina219 {
   };
 
 
-  /**
-   * Read a register from the I2C device
-   * @param register 
-   */
-  // @ts-ignore
-  private readRegister = async (register: AN_INA219_REGISTER) => {
-    if (!this.initialised) throw new Error('Cannot call `readRegister` prior to initialisation.');
+  // /**
+  //  * Read a register from the I2C device
+  //  * @param register 
+  //  */
+  // private readRegister = async (register: AN_INA219_REGISTER) => {
+  //   if (!this.initialised) throw new Error('Cannot call `readRegister` prior to initialisation.');
 
-    const result = Buffer.alloc(2);
-  	await this.i2cBus.readI2cBlock(this.address, register, 2, result);
-  	return result.readInt16BE();
-  };
+  //   const result = Buffer.alloc(2);
+  // 	await this.i2cBus.readI2cBlock(this.address, register, 2, result);
+  // 	return result.readInt16BE();
+  // };
 
 
   /**
@@ -294,10 +319,18 @@ export class Ina219 {
   /**
    * The known state of the I2C Hardware
    */
-  get i2cHardwareState(): AN_I2C_HARDWARE_STATE { return this._i2cHardwareState; }
+  get i2cHardwareState(): A_HARDWARE_AVAILABILITY_STATE { return this._i2cHardwareState; }
+
+  /**
+   * The known state of the ina219 Hardware
+   */
+  get ina219HardwareState(): A_HARDWARE_AVAILABILITY_STATE { return this._ina219HardwareState; }
 
   /**
    * Whether the I2C and the INA219 have both initialised and are working
    */
-  get hardwareAvailable(): boolean { return this._i2cHardwareState === I2C_HARDWARE_STATE.AVAILABLE; }
+  get hardwareAvailable(): boolean { return (
+    this.i2cHardwareState === HARDWARE_AVAILABILITY_STATE.AVAILABLE
+    && this.ina219HardwareState === HARDWARE_AVAILABILITY_STATE.AVAILABLE
+  ); }
 }
