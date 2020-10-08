@@ -76,27 +76,42 @@ const run = async() => {
   const initResult = await(ina219.init(busNumber, address));
 
   // If the device was initialised and could be contacted the initResult will return true
-  if (initResult) {
-    ina219.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
+  if (initResult === true) {
+    ina219.setBusRange(INA219_BUS_VOLTAGE_RANGE.RANGE_16V);
     ina219.setPGA(INA219_PGA_BITS.PGA_BITS_8);
-    ina219.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
-    ina219.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
+    ina219.setBusADC(INA219_ADC_BITS.ADC_BITS_9, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
+    ina219.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_128);
     ina219.setMode(INA219_MODE.SHUNT_AND_BUS_VOL_CON);
 
     // Resets all registers to default values
     // ina219.reset();
 
-    setInterval(async () => {
+    const measureInterval = setInterval(async () => {
       try {
-        console.log(`Shunt Voltage : ${await ina219.getShuntVoltage_mV()} mV`);
-        console.log(`Bus Voltage   : ${await ina219.getBusVoltage()} V`);
-        console.log(`Current       : ${await ina219.getCurrent_mA()} mA`);
-        console.log(`Power         : ${await ina219.getPower_mW()} mW`);
+        // Get all readings at once
+        const readings = await ina219.getAll();
+        console.log(`Bus Voltage   : ${readings.busVoltave_V} V`);
+        console.log(`Shunt Voltage : ${readings.shuntVoltage_mV} mV`);
+        console.log(`Current       : ${readings.current_mA} mA`);
+        console.log(`Power         : ${readings.power_mW} mW`);
         console.log('');
+
+        // Get individual readings
+        // console.log(`Calibration   : ${await ina219.getCalibration()}`);
+        // console.log(`Shunt Voltage : ${await ina219.getShuntVoltage_mV()} mV`);
+        // console.log(`Bus Voltage   : ${await ina219.getBusVoltage_V()} V`);
+        // console.log(`Current       : ${await ina219.getCurrent_mA()} mA`);
+        // console.log(`Power         : ${await ina219.getPower_mW()} mW`);
+        // console.log('');
       } catch (err) {
         console.error('An unexpected error occurred while reading the ina219: ', err);
       }
     }, 1000);
+
+    // When the process is terminated, kill the interval
+    process.on('SIGINT', async () => {
+      clearInterval(measureInterval);
+    });
 
   } else {
     // If the I2C or ina219 were not initialised then the initResult will return an error

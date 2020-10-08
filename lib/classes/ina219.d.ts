@@ -40,12 +40,30 @@ export declare class Ina219 {
     getShuntVoltage_mV: () => Promise<number>;
     /**
      * Get the Current in milliamps (mA)
+     *
+     * As pointed out by many other packages, sometimes a sharp load will reset the
+     * INA219, which will reset the cal register, meaning CURRENT and POWER will
+     * not be available. To resolve this we always set the cal value even if
+     * it's an unfortunate extra step
      */
     getCurrent_mA: () => Promise<number>;
     /**
      * Get the Power in milliwatts (mW)
      */
     getPower_mW: () => Promise<number>;
+    /**
+     * Get the Calibration Value
+     */
+    getCalibration: () => Promise<number>;
+    /**
+     * Get all of the sensor values at once
+     */
+    getAll: () => Promise<{
+        busVoltave_V: number;
+        shuntVoltage_mV: number;
+        current_mA: number;
+        power_mW: number;
+    }>;
     /**
      * Set the Bus Voltage Range (16v or 32v)
      * @param value
