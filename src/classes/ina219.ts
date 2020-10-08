@@ -1,3 +1,8 @@
+import { PromisifiedBus } from 'i2c-bus';
+import { openPromisified } from './i2c.mock';
+import { AN_INA219_I2C_ADDRESS, INA219_I2C_ADDRESS } from '../const/ina219-i2c-address.const';
+import { AN_I2C_HARDWARE_STATE, I2C_HARDWARE_STATE } from '../const/i2c-hardware-state.const';
+
 /*
 const _INA219_READ = 0x01;
 
@@ -158,13 +163,73 @@ const _INA219_REG_CALIBRATION = 0x05;
 
 export class Ina219 {
 
+  private _initialised = false;
+
+  private _i2cHardwareState: AN_I2C_HARDWARE_STATE = I2C_HARDWARE_STATE.UNKNOWN;
+
+  private i2cBus: PromisifiedBus;
+
+
   /**
-   * Initialise the i2c
-   * @param bus 
-   * @param addr 
+   * Initialise the connection to the ina219 over i2c
+   * @param busNumber (default = 1) the i2c bus number to use
+   * @param address (default = INA219_I2C_ADDRESS.4 (0x45)) the i2c address of the INA219
+   * 
+   * @returns true | Error true if initialisation was successful, string .
    */
-  // private __init__ = (bus, addr) => {
-  //   self.i2cbus=smbus.SMBus(bus)
-  //   self.i2c_addr = addr
-  // }
+  public init = async (busNumber = 1, address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS[4]): Promise<true | Error> => {
+    try {
+      // Attempt to open the I2C Bus. This will return false if the hardware is not available.
+      const newI2cBus = await openPromisified(busNumber);
+
+      // If false is returned from the i2c safety wrapper, don't continue the initialisation.
+      if (!newI2cBus) {
+        throw new Error('Failed to open I2C Bus. Perhaps this device is not capable?');
+      }
+
+      this.i2cBus = newI2cBus;
+      this._i2cHardwareState = I2C_HARDWARE_STATE.AVAILABLE;
+      this._initialised = true;
+
+      //   self.i2c_addr = addr
+      console.log(address);
+
+      this.bindEvents();
+    } catch (err) {
+      this._i2cHardwareState = I2C_HARDWARE_STATE.UNAVAILABLE;
+      this._initialised = false;
+      return err;
+    }
+
+    return true;
+  }
+
+  /**
+   * Bind internal event listeners after initialisation
+   */
+  private bindEvents = ():void => {
+    /**
+     * Catch the termination of the application and close the i2c connection (if required)
+     */
+    process.on('SIGINT', async () => {
+      if (this.i2cBus) {
+        await this.i2cBus.close();
+      }
+    });
+  }
+
+  /**
+   * Whether the ina219 has been initialised yet
+   */
+  get initialised(): boolean { return this._initialised; }
+
+  /**
+   * The known state of the I2C Hardware
+   */
+  get i2cHardwareState(): AN_I2C_HARDWARE_STATE { return this._i2cHardwareState; }
+
+  /**
+   * Whether the I2C and the INA219 have both initialised and are working
+   */
+  get hardwareAvailable(): boolean { return this._i2cHardwareState === I2C_HARDWARE_STATE.AVAILABLE; }
 }

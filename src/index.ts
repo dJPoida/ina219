@@ -1,1 +1,1 @@
-export {Ina219} from './classes/ina219';
+export * from './classes/ina219';

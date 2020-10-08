@@ -16,4 +16,7 @@
   ],
   "eslint.enable": true,
   "cSpell.language": "en-GB",
+  "cSpell.words": [
+    "Promisified"
+  ],
 }

@@ -1,5 +1,7 @@
-import {Ina219} from '../lib/index';
+const {Ina219} = require('../lib/index');
 
 const ina219 = new Ina219();
 
-console.log(ina219.echo('bob'));
+ina219.init().then((initResult) => {
+  console.log('initResult: ', initResult);
+});
