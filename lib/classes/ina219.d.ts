@@ -4,6 +4,7 @@ export declare class Ina219 {
     private _initialised;
     private _i2cHardwareState;
     private i2cBus;
+    private _address;
     /**
      * Initialise the connection to the ina219 over i2c
      * @param busNumber (default = 1) the i2c bus number to use
@@ -16,6 +17,10 @@ export declare class Ina219 {
      * Bind internal event listeners after initialisation
      */
     private bindEvents;
+    /**
+     * The address used to communicate with the INA219
+     */
+    get address(): AN_INA219_I2C_ADDRESS;
     /**
      * Whether the ina219 has been initialised yet
      */

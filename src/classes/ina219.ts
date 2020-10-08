@@ -153,13 +153,6 @@ const _INA219_REG_CALIBRATION = 0x05;
 //         else:
 //             return (buf[0] << 8) | (buf[1])
 
-//     def scan(self):
-//         try:
-//             self.i2cbus.read_byte(self.i2c_addr)
-//             return True
-//         except:
-//             print("I2C init fail")
-//             return False
 
 export class Ina219 {
 
@@ -168,6 +161,8 @@ export class Ina219 {
   private _i2cHardwareState: AN_I2C_HARDWARE_STATE = I2C_HARDWARE_STATE.UNKNOWN;
 
   private i2cBus: PromisifiedBus;
+
+  private _address: AN_INA219_I2C_ADDRESS = INA219_I2C_ADDRESS[4];
 
 
   /**
@@ -184,12 +179,20 @@ export class Ina219 {
 
       // If false is returned from the i2c safety wrapper, don't continue the initialisation.
       if (!newI2cBus) {
-        throw new Error('Failed to open I2C Bus. Perhaps this device is not capable?');
+        throw new Error('Failed to open I2C Bus. Perhaps this device is not capable? Or you may not have installed the "i2c-bus" library. Try running an "npm install" first.');
       }
 
       this.i2cBus = newI2cBus;
+      this._address = address;
       this._i2cHardwareState = I2C_HARDWARE_STATE.AVAILABLE;
       this._initialised = true;
+      
+      try {
+        const scanResult = this.i2cBus.scan(address);
+        console.log('scanResult', scanResult);
+      } catch (err) {
+        throw new Error(`I2C was unable to reach the INA219 device at address '${address}'.`);
+      }
 
       //   self.i2c_addr = addr
       console.log(address);
@@ -212,11 +215,16 @@ export class Ina219 {
      * Catch the termination of the application and close the i2c connection (if required)
      */
     process.on('SIGINT', async () => {
-      if (this.i2cBus) {
+      if (this.i2cBus && this.initialised) {
         await this.i2cBus.close();
       }
     });
   }
+
+  /**
+   * The address used to communicate with the INA219
+   */
+  get address(): AN_INA219_I2C_ADDRESS { return this._address; }
 
   /**
    * Whether the ina219 has been initialised yet
