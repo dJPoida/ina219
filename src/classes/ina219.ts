@@ -236,6 +236,7 @@ export class Ina219 {
    * Read a register from the I2C device
    * @param register 
    */
+  // @ts-ignore
   private readRegister = async (register: AN_INA219_REGISTER) => {
     if (!this.initialised) throw new Error('Cannot call `readRegister` prior to initialisation.');
 
@@ -250,12 +251,17 @@ export class Ina219 {
    * @param register 
    */
   private readInaRegister = async (register: AN_INA219_REGISTER) => {
-    const result = await this.readRegister(register);
+    if (!this.initialised) throw new Error('Cannot call `readInaRegister` prior to initialisation.');
+
+    const result = Buffer.alloc(2);
+  	await this.i2cBus.readI2cBlock(this.address, register, 2, result);
+
+    console.log('debug:', result, result[0]);
 
     if (result[0] & 0x80) {
       return - 0x10000 + ((result[0] << 8) | (result[1]));
     } else {
-      return (result[0] << 8) | (result[1])();
+      return ((result[0] << 8) | (result[1]));
     }
   }
 
