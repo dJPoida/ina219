@@ -63,7 +63,7 @@ export declare class Ina219 {
      * Get all of the sensor values at once
      */
     getAll: () => Promise<{
-        busVoltave_V: number;
+        busVoltage_V: number;
         shuntVoltage_mV: number;
         current_mA: number;
         power_mW: number;

@@ -177,7 +177,7 @@ export class Ina219 {
    * Get all of the sensor values at once
    */
   public getAll = async (): Promise<{
-    busVoltave_V: number,
+    busVoltage_V: number,
     shuntVoltage_mV: number,
     current_mA: number,
     power_mW: number,
@@ -197,7 +197,7 @@ export class Ina219 {
     const result = await Promise.all(promises);
 
     return {
-      busVoltave_V: (result[0] >> 1) * 0.001,
+      busVoltage_V: (result[0] >> 1) * 0.001,
       shuntVoltage_mV: result[1],
       current_mA: result[2],
       power_mW: result[3] * 20,
