@@ -76,7 +76,7 @@ const run = async() => {
   const initResult = await(ina219.init(busNumber, address));
 
   // If the device was initialised and could be contacted the initResult will return true
-  if (initResult) {
+  if (initResult === true) {
     ina219.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
     ina219.setPGA(INA219_PGA_BITS.PGA_BITS_8);
     ina219.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
@@ -88,8 +88,8 @@ const run = async() => {
 
     setInterval(async () => {
       try {
+        console.log(`Bus Voltage   : ${await ina219.getBusVoltage_V()} V`);
         console.log(`Shunt Voltage : ${await ina219.getShuntVoltage_mV()} mV`);
-        console.log(`Bus Voltage   : ${await ina219.getBusVoltage()} V`);
         console.log(`Current       : ${await ina219.getCurrent_mA()} mA`);
         console.log(`Power         : ${await ina219.getPower_mW()} mW`);
         console.log('');

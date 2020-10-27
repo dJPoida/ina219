@@ -27,6 +27,10 @@ export declare class Ina219 {
      */
     init: (busNumber?: number, address?: AN_INA219_I2C_ADDRESS) => Promise<true | Error>;
     /**
+     * Close the connection to the ina219 and release the I2C Resources
+     */
+    close: () => Promise<void>;
+    /**
      * Reset the config on the ina219 to the default firmware values
      */
     reset: () => Promise<void>;
@@ -50,7 +54,7 @@ export declare class Ina219 {
      * Set the Bus Voltage Range (16v or 32v)
      * @param value
      */
-    setBusRange: (value: AN_INA219_BUS_VOLTAGE_RANGE) => Promise<void>;
+    setBusRNG: (value: AN_INA219_BUS_VOLTAGE_RANGE) => Promise<void>;
     /**
      * Set the Programmable Gain Amplifier
      * @param bits

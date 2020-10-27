@@ -65,7 +65,7 @@ export class Ina219 {
 
       // Set the default config
       this.calValue = 4096;
-      await this.setBusRange(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
+      await this.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
       await this.setPGA(INA219_PGA_BITS.PGA_BITS_8);
       await this.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
       await this.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
@@ -80,7 +80,7 @@ export class Ina219 {
         try {
           await this.i2cBus.close();
         } catch {
-          // sink. Don't care
+          // Sink. Don't care
         }
       }
 
@@ -90,6 +90,29 @@ export class Ina219 {
     }
 
     return true;
+  }
+
+
+  /**
+   * Close the connection to the ina219 and release the I2C Resources
+   */
+  public close = async ():Promise<void> => {
+    if (this.initialised) {
+      try {
+        // Reset the ina219
+        await this.reset();
+        
+        // Close the I2C Bus
+        await this.i2cBus.close();
+      } catch {
+        // Sink. Don't care.
+      }
+
+      this._initialised = false;
+      this._ina219HardwareState = HARDWARE_AVAILABILITY_STATE.UNKNOWN;
+      // Leave the i2cHardware State alone
+      // this._i2cHardwareState
+    }
   }
 
 
@@ -137,7 +160,7 @@ export class Ina219 {
    * Set the Bus Voltage Range (16v or 32v)
    * @param value
    */
-  public setBusRange = async (value: AN_INA219_BUS_VOLTAGE_RANGE): Promise<void> => {
+  public setBusRNG = async (value: AN_INA219_BUS_VOLTAGE_RANGE): Promise<void> => {
     if (!this.initialised) throw new Error('Cannot call `setBusRNG` prior to initialisation.');
 
     let conf = 0;
@@ -281,8 +304,6 @@ export class Ina219 {
     const result = Buffer.alloc(2);
   	await this.i2cBus.readI2cBlock(this.address, register, 2, result);
 
-    console.log('debug:', result, result[0]);
-
     if (result[0] & 0x80) {
       return - 0x10000 + ((result[0] << 8) | (result[1]));
     } else {
@@ -299,7 +320,7 @@ export class Ina219 {
      * Catch the termination of the application and close the i2c connection (if required)
      */
     process.on('SIGINT', async () => {
-      if (this.i2cBus && this.initialised) {
+      if (this.initialised && this.i2cBus) {
         await this.i2cBus.close();
       }
     });

@@ -1,5 +1,5 @@
 {
-  "name": "ina219",
+  "name": "@djpoida/ina219",
   "author": "dJPoida <djpoida@gmail.com>",
   "version": "0.0.1",
   "description": "NodeJS port of the DFRobot INA219 (SEN0291) IIC Digital Wattmeter",
