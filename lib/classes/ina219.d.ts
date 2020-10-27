@@ -113,10 +113,6 @@ export declare class Ina219 {
      */
     private readInaRegister;
     /**
-     * Bind internal event listeners after initialisation
-     */
-    private bindEvents;
-    /**
      * The address used to communicate with the INA219
      */
     get address(): AN_INA219_I2C_ADDRESS;

@@ -72,9 +72,6 @@ export class Ina219 {
       await this.setShuntADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
       await this.setMode(INA219_MODE.SHUNT_AND_BUS_VOL_CON);
 
-      // Bind listeners for future event handling
-      this.bindEvents();
-      
     } catch (err) {
       // If the I2C Bus was connected but the ina219's address couldn't be reached, shut the i2c bus down again
       if (this.i2cBus) {
@@ -361,22 +358,6 @@ export class Ina219 {
       return ((result[0] << 8) | (result[1]));
     }
   }
-
-
-  /**
-   * Bind internal event listeners after initialisation
-   */
-  private bindEvents = ():void => {
-    /**
-     * Catch the termination of the application and close the i2c connection (if required)
-     */
-    process.on('SIGINT', async () => {
-      if (this.initialised && this.i2cBus) {
-        await this.i2cBus.close();
-      }
-    });
-  }
-
 
   /**
    * The address used to communicate with the INA219
