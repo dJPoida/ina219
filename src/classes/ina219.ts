@@ -55,7 +55,7 @@ export class Ina219 {
       // Attempt to locate the device
       const scanResult = await this.i2cBus.scan(address);
       if (!scanResult.includes(address)) {
-        throw new Error(`I2C was unable to reach the INA219 device at address '0x${address.toString(16)}'.`);
+        throw new Error(`I2C was unable to reach the INA219 device on bus ${busNumber} at address 0x${address.toString(16)}.`);
       }
 
       // Record the config
@@ -65,6 +65,7 @@ export class Ina219 {
 
       // Set the default config
       this.calValue = 4096;
+      await this.writeRegister(INA219_REGISTER.CALIBRATION, this.calValue);
       await this.setBusRNG(INA219_BUS_VOLTAGE_RANGE.RANGE_32V);
       await this.setPGA(INA219_PGA_BITS.PGA_BITS_8);
       await this.setBusADC(INA219_ADC_BITS.ADC_BITS_12, INA219_ADC_SAMPLE.ADC_SAMPLE_8);
@@ -136,15 +137,25 @@ export class Ina219 {
    * Get the Shunt Voltage in millivolts (mV)
    */
   public getShuntVoltage_mV = async (): Promise<number> => {
-    return this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE);
+    return await this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE);
   }
 
 
   /**
    * Get the Current in milliamps (mA)
+   * 
+   * As pointed out by many other packages, sometimes a sharp load will reset the
+   * INA219, which will reset the cal register, meaning CURRENT and POWER will
+   * not be available. To resolve this we always set the cal value even if
+   * it's an unfortunate extra step
    */
   public getCurrent_mA = async (): Promise<number> => {
-    return this.readInaRegister(INA219_REGISTER.CURRENT);
+    const activeCalValue = await this.readInaRegister(INA219_REGISTER.CALIBRATION);
+    if (activeCalValue !== this.calValue) {
+      // console.warn('Calibration Lost!');
+      await this.writeRegister(INA219_REGISTER.CALIBRATION, this.calValue);
+    }
+    return await this.readInaRegister(INA219_REGISTER.CURRENT);
   }
 
 
@@ -152,7 +163,48 @@ export class Ina219 {
    * Get the Power in milliwatts (mW)
    */
   public getPower_mW = async (): Promise<number> => {
+    await this.writeRegister(INA219_REGISTER.CALIBRATION, this.calValue);
     return (await this.readInaRegister(INA219_REGISTER.POWER) * 20);
+  }
+
+
+  /**
+   * Get the Calibration Value
+   */
+  public getCalibration = async (): Promise<number> => {
+    return await this.readInaRegister(INA219_REGISTER.CALIBRATION);
+  }
+
+
+  /**
+   * Get all of the sensor values at once
+   */
+  public getAll = async (): Promise<{
+    busVoltave_V: number,
+    shuntVoltage_mV: number,
+    current_mA: number,
+    power_mW: number,
+  }> => {
+    const activeCalValue = await this.readInaRegister(INA219_REGISTER.CALIBRATION);
+    if (activeCalValue !== this.calValue) {
+      await this.writeRegister(INA219_REGISTER.CALIBRATION, this.calValue);
+    }
+    
+    const promises = [
+      this.readInaRegister(INA219_REGISTER.BUSVOLTAGE),
+      this.readInaRegister(INA219_REGISTER.SHUNTVOLTAGE),
+      this.readInaRegister(INA219_REGISTER.CURRENT),
+      this.readInaRegister(INA219_REGISTER.POWER),
+    ];
+
+    const result = await Promise.all(promises);
+
+    return {
+      busVoltave_V: (result[0] >> 1) * 0.001,
+      shuntVoltage_mV: result[1],
+      current_mA: result[2],
+      power_mW: result[3] * 20,
+    };
   }
 
 
@@ -222,7 +274,6 @@ export class Ina219 {
 
     let conf = 0;
     let value = 0;
-
 
     if((bits < INA219_ADC_BITS.ADC_BITS_12) && (sample > INA219_ADC_SAMPLE.ADC_SAMPLE_1)) return;
       
